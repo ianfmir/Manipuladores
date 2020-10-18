@@ -1,58 +1,103 @@
+%% Trabalho Final - Manipuladores Robóticos
+% Simulação de um robô que pinta paredes desviando de obstáculos                       
+% Autores:
+% André Freire Vidigal - 2014144448
+% Ian Fernandes Miranda - 2015113295
+% Vitor Ribas Moura - 2015129094
+
+%% Preparação do ambiente
+
 close all
 clear
 clc
 
-%Queremos que o centro do paraleleṕıpedo
-%esteja em [0;0.6;0.75]
-MTH=Robo.desl([0;0.4;0.6]);
-%Queremos as dimens~oes 3, 0.1 e .6
+%% Criação do cenário
+
+% Posicionamento do centro da parede
+MTH=Robo.desl([0;0.7;0.4]);
+% Dimensionamento da parede
 lados = [3 0.1 0.8];
-%Escolhemos as cores (RGB)
+% Coloração da parede (RGB)
 cor = [0.9 0.9 0.9];
-%Queremos densidade 1
+% Densidade da parede
 densidade = 1;
+% Criação da parede
 P=Paralelepipedo(MTH,lados,cor,densidade);
 
-%Criando obstaculo (Janela)
-%definindo o centro
-MTHJ=Robo.desl([0;0.35;0.5]);
-%Queremos as dimensoes 0.3, 0.1 e 0.4
-ladosJ = [0.3 0.1 0.4];
-%Escolhemos as cores (RGB)
+% Posicionamento do centro da janela
+MTHJ=Robo.desl([0;0.7;0.3]);
+% Dimensionamento da janela
+ladosJ = [1 0.1 0.6];
+% Coloração da janela (RGB)
 corJ = [0.3 0.3 0.7];
+% Criação da janela
 J=Paralelepipedo(MTHJ,ladosJ,corJ,densidade);
 
-%cria robo
+% Criação do robô
 R = Robo.Cria_KukaKR5();
+
+% Criação do cenário
 C = Cenario(R);
+% Adição da parede
 C.adicionaobjetos(P);
+% Adição da janela
 C.adicionaobjetos(J);
+% Adição do robô
 C.adicionaobjetos(R);
 
-%criando o Tdes
+% Criação da posição inicial desejada do efetuador
 Tef0= R.cinematicadir(R.q, 'efetuador');
-Tdes = Robo.desl([-1.5; -0.2; 0.245])*Tef0; %posicao desejada do efetuador em metros
+Tdes = Robo.desl([-1.5; 0.6; 0]); %*Tef0
 xdes = Tdes(1:3,1);
 ydes = Tdes(1:3,2);
 zdes = Tdes(1:3,3);
 pdes = Tdes(1:3,4);
 
-%eixo da posicao desejada
+%Criação dos eixos da posicao desejada
 E = Eixo(Tdes, 0.2,{'xdes', 'ydes', 'zdes'});
 C.adicionaobjetos(E);
 
-%constantes
+%Desenho dos elementos do cenário
+C.desenha();
+
+pause();
+
+%% Movimentação da posição desejada do efetuador
+% Percorre o eixo X da parede
+for x = 0:60
+    % Novo valor para o X desejado
+    newxdes = -1.5+x/20;
+    % Percorre o eixo Y da parede
+    for z = 0:80
+        % Novo valor para o Z desejado
+        newzdes = z/100;
+        % Verificando se a posição em questão não é a janela
+        if ((newxdes < -0.5 || newxdes > 0.5) || newzdes > 0.6)
+            % Tdes assume novos valores
+            Tdes = Robo.desl([newxdes; 0.6; newzdes]);
+            % Criação do eixo da posição desejada com os novos valores
+            E = Eixo(Tdes, 0.2,{'xdes', 'ydes', 'zdes'});
+            % As próximas três linhas devem ser substituídas pelo movimento
+            % do robô, mas neste momento estão aqui para mostrar na figura
+            % que o frame desejado percorre toda a parede, com exceção da
+            % porta.
+            C.adicionaobjetos(E);
+            C.desenha();
+            drawnow;
+        end
+    end
+end
+%% Movimentação do robô
+
+% Constantes
 dt = 0.01;
 K = 7;
 
-%historicos
+% Historicos
 q_hist=[];
 r_hist=[];
 u_hist=[];
 t=[];
-C.desenha();
-
-pause();
 
 for k = 1: 2/dt %tempo em s/dt
     q_hist(:,k) = R.q;
