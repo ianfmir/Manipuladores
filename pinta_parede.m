@@ -4,9 +4,9 @@ clc
 
 %Queremos que o centro do paraleleṕıpedo
 %esteja em [0;0.6;0.75]
-MTH=Robo.desl([0;0.8;0.75]);
-%Queremos as dimens~oes 1, 0.1 e 1.5
-lados = [1.5 0.1 1.5];
+MTH=Robo.desl([0;0.4;0.6]);
+%Queremos as dimens~oes 3, 0.1 e .6
+lados = [3 0.1 0.8];
 %Escolhemos as cores (RGB)
 cor = [0.9 0.9 0.9];
 %Queremos densidade 1
@@ -15,7 +15,7 @@ P=Paralelepipedo(MTH,lados,cor,densidade);
 
 %Criando obstaculo (Janela)
 %definindo o centro
-MTHJ=Robo.desl([0;0.75;0.85]);
+MTHJ=Robo.desl([0;0.35;0.5]);
 %Queremos as dimensoes 0.3, 0.1 e 0.4
 ladosJ = [0.3 0.1 0.4];
 %Escolhemos as cores (RGB)
@@ -24,7 +24,6 @@ J=Paralelepipedo(MTHJ,ladosJ,corJ,densidade);
 
 %cria robo
 R = Robo.Cria_KukaKR5();
-%Cria um cenário
 C = Cenario(R);
 C.adicionaobjetos(P);
 C.adicionaobjetos(J);
@@ -32,7 +31,7 @@ C.adicionaobjetos(R);
 
 %criando o Tdes
 Tef0= R.cinematicadir(R.q, 'efetuador');
-Tdes = Robo.desl([-0.75; 0.20; 0.745])*Tef0; %posicao desejada do efetuador em metros o ; para transformar em uma matriz coluna
+Tdes = Robo.desl([-1.5; -0.2; 0.245])*Tef0; %posicao desejada do efetuador em metros
 xdes = Tdes(1:3,1);
 ydes = Tdes(1:3,2);
 zdes = Tdes(1:3,3);
@@ -43,7 +42,7 @@ E = Eixo(Tdes, 0.2,{'xdes', 'ydes', 'zdes'});
 C.adicionaobjetos(E);
 
 %constantes
-dt = 0.01
+dt = 0.01;
 K = 7;
 
 %historicos
