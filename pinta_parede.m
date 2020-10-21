@@ -75,37 +75,31 @@ C.desenha();
 
 pause();
 
-% %% Movimentação da posição desejada do efetuador
-% % Percorre o eixo X da parede
-% for x = 0:60
-%     % Novo valor para o X desejado
-%     newxdes = -1.5+x/20;
-%     % Percorre o eixo Y da parede
-%     for z = 0:80
-%         % Novo valor para o Z desejado
-%         newzdes = z/100;
-%         % Verificando se a posição em questão não é a janela
-%         if ((newxdes < -0.5 || newxdes > 0.5) || newzdes > 0.6)
-%             % Tdes assume novos valores
-%             Tdes = Robo.desl([newxdes; 0.6; newzdes]);
-%             % Criação do eixo da posição desejada com os novos valores
-%             E = Eixo(Tdes, 0.2,{'xdes', 'ydes', 'zdes'});
-%             % As próximas três linhas devem ser substituídas pelo movimento
-%             % do robô, mas neste momento estão aqui para mostrar na figura
-%             % que o frame desejado percorre toda a parede, com exceção da
-%             % porta.
-%             
-%             for i = 1: 100
-%                 %Atualiza a mth do Robo
-%                 MTH=Robo.desl([-0.01*i;0;0]);
-%                 R.mth = MTH;
-%                 R.config(R.q);
-%                 C.desenha();
-%                 drawnow;
-%             end
-%         end
-%     end
-% end
+%% Movimentação da posição desejada do efetuador
+% Percorre o eixo X da parede
+for x = 0:60
+    % Novo valor para o X desejado
+    newxdes = -1.5+x/20;
+    % Percorre o eixo Y da parede
+    for z = 0:80
+        % Novo valor para o Z desejado
+        newzdes = z/100;
+        % Verificando se a posição em questão não é a janela
+        if ((newxdes < -0.5 || newxdes > 0.5) || newzdes > 0.6)
+            % Tdes assume novos valores
+            Tdes = Robo.desl([newxdes; 0.6; newzdes]);
+            % Criação do eixo da posição desejada com os novos valores
+            E = Eixo(Tdes, 0.2,{'xdes', 'ydes', 'zdes'});
+            % As próximas três linhas devem ser substituídas pelo movimento
+            % do robô, mas neste momento estão aqui para mostrar na figura
+            % que o frame desejado percorre toda a parede, com exceção da
+            % porta.
+            C.adicionaobjetos(E);
+            C.desenha();
+            drawnow;
+        end
+    end
+end
 %% Movimentação do robô
 
 % Constantes
