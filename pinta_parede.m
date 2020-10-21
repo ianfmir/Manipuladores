@@ -75,39 +75,9 @@ C.desenha();
 
 pause();
 
-
-% %% Movimentação da posição desejada do efetuador
-% % Percorre o eixo X da parede
-% for x = 0:60
-%     % Novo valor para o X desejado
-%     newxdes = -1.4+x/20;
-%     % Percorre o eixo Y da parede
-%     for z = 0:80
-%         % Novo valor para o Z desejado
-%         newzdes = z/100;
-%         % Verificando se a posição em questão não é a janela
-%         if ((newxdes < -0.5 || newxdes > 0.5) || newzdes > 0.6)
-%             % Tdes assume novos valores
-%             Tdes = Robo.desl([newxdes; 0.6; newzdes]);
-%             % Criação do eixo da posição desejada com os novos valores
-%             E = Eixo(Tdes, 0.2,{'xdes', 'ydes', 'zdes'});
-%             % As próximas três linhas devem ser substituídas pelo movimento
-%             % do robô, mas neste momento estão aqui para mostrar na figura
-%             % que o frame desejado percorre toda a parede, com exceção da
-%             % porta.
-%             
-%            C.adicionaobjetos(E);
-%            C.desenha();
-%            drawnow;
-%             end
-%         end
-%     end
-% end
-
-
 %% Movimentação do robô
 
-% Constantes
+%Constantes
 dt = 0.01;
 K = 7;
 
@@ -129,53 +99,45 @@ end
 
 
 %posiciona o pincel na parte inferior esquerda da parede
-for k = 0:6
-    Tdes = Tdes*Robo.desl([0.1*k;0;0]);
-    xdes = Tdes(1:3,1);
-    ydes = Tdes(1:3,2);
-    zdes = Tdes(1:3,3);
-    pdes = Tdes(1:3,4);
-    for k = 1: 2/dt %tempo em s/dt
-        q_hist(:,k) = R.q;
-        t(k) = (k-1)*dt;
+for k = 1: 2/dt %tempo em s/dt
+    q_hist(:,k) = R.q;
+	t(k) = (k-1)*dt;
 
-        Tef = R.cinematicadir(R.q,'efetuador');
-        Jgeo = R.jacobianageo(R.q,'efetuador');
+	Tef = R.cinematicadir(R.q,'efetuador');
+	Jgeo = R.jacobianageo(R.q,'efetuador');
 
-        pef = Tef(1:3,4);
-        xef = Tef(1:3,1);
-        yef = Tef(1:3,2);
-        zef = Tef(1:3,3);
+	pef = Tef(1:3,4);
+	xef = Tef(1:3,1);
+    yef = Tef(1:3,2);
+    zef = Tef(1:3,3);
 
-        Jp = Jgeo(1:3,:);
-        Jw = Jgeo(4:6,:);
+    Jp = Jgeo(1:3,:);
+    Jw = Jgeo(4:6,:);
 
-        rpos = pef-pdes;
-        rorix = 1-xdes'*xef;
-        roriy = 1-ydes'*yef;
-        roriz = 1-zdes'*zef;
+    rpos = pef-pdes;
+    rorix = 1-xdes'*xef;
+    roriy = 1-ydes'*yef;
+    roriz = 1-zdes'*zef;
 
-        r = [rpos;rorix;roriy;roriz];
+    r = [rpos;rorix;roriy;roriz];
 
-        Jrpos = Jp;
-        Jrorix = xdes'*Robo.matrizprodv(xef)*Jw;  
-        Jroriy = ydes'*Robo.matrizprodv(yef)*Jw;
-        Jroriz = zdes'*Robo.matrizprodv(zef)*Jw;
+    Jrpos = Jp;
+    Jrorix = xdes'*Robo.matrizprodv(xef)*Jw;  
+    Jroriy = ydes'*Robo.matrizprodv(yef)*Jw;
+    Jroriz = zdes'*Robo.matrizprodv(zef)*Jw;
 
-        Jr = [Jrpos;Jrorix;Jroriy;Jroriz];
+    Jr = [Jrpos;Jrorix;Jroriy;Jroriz];
 
-        u = Robo.pinvam(Jr,0.001)*(-K*r);
+    u = Robo.pinvam(Jr,0.001)*(-K*r);
 
-        u_hist(:,k) = u;
-        r_hist(:,k) = r;
+    u_hist(:,k) = u;
+    r_hist(:,k) = r;
 
-        qprox = R.q + u*dt;
-        R.config(qprox);
-        C.desenha();
-        drawnow;    
-    end
+    qprox = R.q + u*dt;
+    R.config(qprox);
+    C.desenha();
+    drawnow;    
 end
-
 
 % %movimenta base do robo para x=-0.8
 % for i = 1: 40
