@@ -25,9 +25,9 @@ densidade = 1;
 P=Paralelepipedo(MTH,lados,cor,densidade);
 
 % Posicionamento do centro da janela
-MTHJ=Robo.desl([0;0.73;0.3]);
+MTHJ=Robo.desl([0;0.73;0.4]);
 % Dimensionamento da janela
-ladosJ = [1 0.1 0.6];
+ladosJ = [1 0.1 0.8];
 % Coloração da janela (RGB)
 corJ = [0.3 0.3 0.7];
 % Criação da janela
@@ -50,7 +50,7 @@ R.grudaobjeto(pincel);
 
 % Criação do cenário
 C = Cenario(R);
-% Adição da parede
+% Adição da  parede
 C.adicionaobjetos(P);
 % Adição da janela
 C.adicionaobjetos(J);
@@ -68,40 +68,38 @@ pdes = Tdes(1:3,4);
 
 %Criação dos eixos da posicao desejada
 E = Eixo(Tdes, 0.2,{'xdes', 'ydes', 'zdes'});
-C.adicionaobjetos(E);
+%C.adicionaobjetos(E);
 
 %Desenho dos elementos do cenário
 C.desenha();
 
 pause();
 
-%% Movimentação do robô
+%% Parâmetros de controle %%
 
-%Constantes
-dt = 0.01;
-K = 7;
+K=10;
+deltaT=0.01;
+q=R.q;
+alpha=0.001;
+rh=[];
+k=1;
 
-% Historicos
-q_hist=[];
-r_hist=[];
-u_hist=[];
-t=[];
+%% Posicionamento inicial do robô %%
 
 %movimenta base do robo para x=-1.2
-for i = 1: 120
+for i = 1: 12
     %Atualiza a mth do Robo
-    MTH=Robo.desl([-0.01*i;0;0]);
+    MTH=Robo.desl([-0.1*i;0;0]);
     R.mth = MTH;
     R.config(R.q);
     C.desenha();
     drawnow;
 end
 
-
 %posiciona o pincel na parte inferior esquerda da parede
-for k = 1: 2/dt %tempo em s/dt
+for k = 1: 2/deltaT %tempo em s/dt
     q_hist(:,k) = R.q;
-	t(k) = (k-1)*dt;
+	t(k) = (k-1)*deltaT;
 
 	Tef = R.cinematicadir(R.q,'efetuador');
 	Jgeo = R.jacobianageo(R.q,'efetuador');
@@ -133,48 +131,45 @@ for k = 1: 2/dt %tempo em s/dt
     u_hist(:,k) = u;
     r_hist(:,k) = r;
 
-    qprox = R.q + u*dt;
+    qprox = R.q + u*deltaT;
     R.config(qprox);
     C.desenha();
     drawnow;    
 end
+pause();
 
-% %movimenta base do robo para x=-0.8
-% for i = 1: 40
-%     %Atualiza a mth do Robo
-%     MTH=Robo.desl([0.01*i;0;0]);
-%     R.mth = MTH;
-%     R.config(R.q);
-%     C.desenha();
-%     drawnow;
-% end
-% 
-% %movimenta base do robo para x= 0 
-% for i = 1: 80
-%     %Atualiza a mth do Robo
-%     MTH=Robo.desl([0.01*i;0;0]);
-%     R.mth = MTH;
-%     R.config(R.q);
-%     C.desenha();
-%     drawnow;
-% end
-% 
-% %movimenta base do robo para x= 0.8
-% for i = 1: 80
-%     %Atualiza a mth do Robo
-%     MTH=Robo.desl([0.01*i;0;0]);
-%     R.mth = MTH;
-%     R.config(R.q);
-%     C.desenha();
-%     drawnow;
-% end
-% 
-% %movimenta base do robo para x= 1.2
-% for i = 1: 40
-%     %Atualiza a mth do Robo
-%     MTH=Robo.desl([0.01*i;0;0]);
-%     R.mth = MTH;
-%     R.config(R.q);
-%     C.desenha();
-%     drawnow;
-% end
+%% Loop principal do algorítmo %%
+
+q=q_hist;
+
+for x = 2: 30
+    for z = 0: 15
+        %Evitando a porta
+        if x<10 || x>19
+            %Calculando o vetor de tarefa e a Jacobiana
+            if mod(x,2)==0
+                 Tdes= Robo.desl([-1.5+x/10;0.6;z/10])*Robo.rot('y',-pi/2)*Robo.rot('x',-pi/2);
+            else
+                Tdes= Robo.desl([-1.5+x/10;0.6;(8-z)/10])*Robo.rot('y',-pi/2)*Robo.rot('x',-pi/2);
+            end
+            [r,Jr] = functarefa2(R,q(:,k),Tdes);
+            %Guarda o hist´orico de vetor de erros
+            rh=[rh r];
+            %Calculando a velocidade que deve ser integrada
+            qdot = Robo.pinvam(Jr,alpha)*(-K*r);
+            %Criando o pr´oximo k por integra¸c~ao
+            q(:,k+1) = q(:,k)+deltaT*qdot;
+            %Coloca no rob^o
+            R.config(q(:,k+1));
+            %Desenha
+            C.desenha();
+            drawnow;
+            k=k+1;
+        end
+    end
+    MTH=Robo.desl([-1.5+0.1*x;0;0]);
+    R.mth = MTH;
+    R.config(R.q);
+    C.desenha();
+    drawnow;
+end
