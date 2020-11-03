@@ -11,6 +11,7 @@ close all
 clear
 clc
 
+
 %% Criação do cenário
 
 % Posicionamento do centro da parede
@@ -86,10 +87,10 @@ k=1;
 
 %% Posicionamento inicial do robô %%
 
-%movimenta base do robo para x=-1.2
-for i = 1: 12
+movimenta base do robo para x=-1.2
+for i = 1: 120
     %Atualiza a mth do Robo
-    MTH=Robo.desl([-0.1*i;0;0]);
+    MTH=Robo.desl([-0.01*i;0;0]);
     R.mth = MTH;
     R.config(R.q);
     C.desenha();
@@ -126,7 +127,7 @@ for k = 1: 2/deltaT %tempo em s/dt
 
     Jr = [Jrpos;Jrorix;Jroriy;Jroriz];
 
-    u = Robo.pinvam(Jr,0.001)*(-K*r);
+    u = Robo.pinvam(Jr,0.01)*(-K*r);
 
     u_hist(:,k) = u;
     r_hist(:,k) = r;
@@ -136,7 +137,6 @@ for k = 1: 2/deltaT %tempo em s/dt
     C.desenha();
     drawnow;    
 end
-pause();
 
 %% Loop principal do algorítmo %%
 
@@ -145,12 +145,12 @@ q=q_hist;
 for x = 2: 30
     for z = 0: 15
         %Evitando a porta
-        if x<10 || x>19
+        if x<10 || x>20
             %Calculando o vetor de tarefa e a Jacobiana
             if mod(x,2)==0
-                 Tdes= Robo.desl([-1.5+x/10;0.6;z/10])*Robo.rot('y',-pi/2)*Robo.rot('x',-pi/2);
+                Tdes= Robo.desl([-1.5+0.1*x;0.6;z/10])*Robo.rot('y',-pi/2)*Robo.rot('x',-pi/2);
             else
-                Tdes= Robo.desl([-1.5+x/10;0.6;(8-z)/10])*Robo.rot('y',-pi/2)*Robo.rot('x',-pi/2);
+                Tdes= Robo.desl([-1.5+0.1*x;0.6;(8-z)/10])*Robo.rot('y',-pi/2)*Robo.rot('x',-pi/2);
             end
             [r,Jr] = functarefa2(R,q(:,k),Tdes);
             %Guarda o hist´orico de vetor de erros
@@ -167,9 +167,52 @@ for x = 2: 30
             k=k+1;
         end
     end
-    MTH=Robo.desl([-1.5+0.1*x;0;0]);
-    R.mth = MTH;
-    R.config(R.q);
-    C.desenha();
-    drawnow;
+    
+    %movimentação da base do robo no eixo x
+    if x == 10      %quando chega proximo à porta, movimenta até sair da porta
+        if(R.mth(1,4)<0.8)
+            %Atualiza a mth do Robo
+            MTH=Robo.desl([R.mth(1,4)+0.01;0;0]);
+            R.mth = MTH;
+            R.config(R.q);
+            C.desenha();
+            drawnow;
+        end
+    else    %quando não esta na área da porta, movimenta 10cm por vez
+        for i = 1: 10
+            %Atualiza a mth do Robo
+            MTH=Robo.desl([R.mth(1,4)+0.01;0;0]);
+            R.mth = MTH;
+            R.config(R.q);
+            C.desenha();
+            drawnow;
+        end
+    end
+end
+
+%%
+
+function [r,Jr] = functarefa2(R,q,Tdes)
+%Vamos montar a referencia desejada no tempo
+px_des = Tdes(1,4);
+py_des = Tdes(2,4);
+pz_des = Tdes(3,4);
+ex_des = Tdes(1:3,1);
+ey_des = Tdes(1:3,2);
+ez_des = Tdes(1:3,3);
+
+%Vamos extrair os valores atuais para essas vari´aveis baseados
+%na cinematica direta. Vamos tambem calcular a Jacobiana, que ser´a
+%necessaria
+[J,CD]=R.jacobianageo(q,'efetuador');
+px = CD(1,4);
+py = CD(2,4);
+pz = CD(3,4);
+ex = CD(1:3,1);
+ey = CD(1:3,2);
+ez = CD(1:3,3);
+%Vamos calcular o vetor de tarefa, um vetor COLUNA
+r = [px-px_des; py-py_des; pz-pz_des; 1-(ex_des)'*ex; 1-(ey_des)'*ey; 1-(ez_des)'*ez];
+%Vamos calcular a Jacobiana da tarefa:
+Jr = [J(1:3,:); (ex_des)'*Robo.matrizprodv(ex)*J(4:6,:);(ey_des)'*Robo.matrizprodv(ey)*J(4:6,:);(ez_des)'*Robo.matrizprodv(ez)*J(4:6,:)];
 end
